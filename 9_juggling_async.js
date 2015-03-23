@@ -1,22 +1,21 @@
 var http = require('http');
 var bl = require('bl');
+var async = require('async');
 
 var urls = process.argv.slice(2);
 
-var results = [];
-var callbacksCounter = 0;
+function printResults(err, results) {
+  if (err) return console.log(err);
+  console.log(results.join('\n'));
+}
 
-urls.map(function (url, indx) {
+function getData(url, cb) {
   http.get(url, function (res) {
-    res.pipe(bl(function (err, data) {
-      if (err) return console.log(err);
-
-      results[indx] = data.toString();
-      callbacksCounter++;
-      if (callbacksCounter === 3) {
-        // we have all three url-data
-        console.log(results.join('\n'));
-      }
+    res.pipe( bl( function (err, data) {
+      if (err) return cb(err);
+      cb(null, data.toString());
     }));
   });
-});
+}
+
+async.map(urls, getData, printResults);
